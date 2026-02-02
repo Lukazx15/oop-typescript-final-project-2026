@@ -52,6 +52,7 @@
 │       └── utils/
 │
 ├── docs/
+├── subjects/
 │   ├── api-specification.md
 │   ├── data-model.md
 │   ├── uml-diagram.png
@@ -125,14 +126,14 @@ http://localhost:3000/api
 }
 ```
 
-**รายละเอียด Model Sets ทั้งหมด:** → [`docs/models.md`](docs/models.md)
+**รายละเอียด Model Sets ทั้งหมด:** → [`subjects/models.md`](subjects/models.md)
 
 ---
 
 ## 📐 Project Requirements (Summary)
 
 ### Data Model
-* ต้องเลือกใช้ **Model Set 1 ชุด** จาก 10 ชุดที่มีให้ (ดูรายละเอียดใน [`docs/models.md`](docs/models.md))
+* ต้องเลือกใช้ **Model Set 1 ชุด** จาก 10 ชุดที่มีให้ (ดูรายละเอียดใน [`subjects/models.md`](subjects/models.md))
 * แต่ละ Model Set มี **Core Data Model 2 Models**
 * ต้องบันทึก Model Set ที่เลือกไว้ใน `package.json` (key `project`)
 * ใช้ TypeScript data type ให้ครบถ้วน
@@ -178,18 +179,18 @@ interface ApiResponse<T> {
 
 ## 📄 Documentation
 
-เอกสารรายละเอียดของโจทย์และข้อกำหนดทั้งหมดถูกจัดเก็บไว้ในโฟลเดอร์ `docs/`
+เอกสารรายละเอียดของโจทย์และข้อกำหนดทั้งหมดถูกจัดเก็บไว้ในโฟลเดอร์ `subjects/`
 
 ### เอกสารโจทย์ (Project Specification)
 
 * 📘 **Project Requirement** — ขอบเขตและข้อกำหนดของโปรเจค
-  → [`docs/requirement.md`](docs/requirement.md)
+  → [`subjects/requirement.md`](subjects/requirement.md)
 * 🧩 **Model Sets** — รายละเอียด Model Sets ทั้ง 10 ชุด
-  → [`docs/models.md`](docs/models.md)
+  → [`subjects/models.md`](subjects/models.md)
 * 📦 **Submission Guideline** — รูปแบบและขั้นตอนการส่งงาน
-  → [`docs/submission.md`](docs/submission.md)
+  → [`subjects/submission.md`](subjects/submission.md)
 * 🧮 **Evaluation Criteria** — เกณฑ์การให้คะแนนและการประเมินผล
-  → [`docs/evaluation.md`](docs/evaluation.md)
+  → [`subjects/evaluation.md`](subjects/evaluation.md)
 
 ### เอกสารทางเทคนิค (ต้องจัดทำ)
 

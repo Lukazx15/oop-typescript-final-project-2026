@@ -36,14 +36,14 @@
 
 ## 5. Data Model Requirement
 - ต้องเลือกใช้ **Model Set 1 ชุด** จาก 10 ชุดที่มีให้
-- วิธีการเลือก Model Set: ดูรายละเอียดใน [`docs/models.md`](models.md)
+- วิธีการเลือก Model Set: ดูรายละเอียดใน [`subjects/models.md`](subjects/models.md)
 - แต่ละ Model Set มี **Core Data Model 2 Models**
 - ใช้ TypeScript data type ให้ครบถ้วน
 - ต้องมีการใช้งาน **Enum อย่างน้อย 1 จุด**
 - Model ย่อย, attribute, enum และความสัมพันธ์เชิงลึก ให้นักศึกษาออกแบบเองทั้งหมด
 - ❌ ห้ามใช้ `any` type ในทุกกรณี
 
-**รายละเอียด Model Sets:** → [`docs/models.md`](models.md)
+**รายละเอียด Model Sets:** → [`subjects/models.md`](subjects/models.md)
 
 ---
 

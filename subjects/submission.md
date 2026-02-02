@@ -1,8 +1,17 @@
 # Submission Guideline — NestJS Backend API Project
 
+## 0. GitHub Template
+- **Template Repository:** [https://github.com/42bangkok-classroom/oop-typescript-final-project-2026](https://github.com/42bangkok-classroom/oop-typescript-final-project-2026)
+- ใช้ Template นี้เป็นจุดเริ่มต้นสำหรับการทำโปรเจค
+
+---
+
 ## 1. Submission Method
 - ส่งงานเป็น **GitHub Repository URL**
 - Repository ต้องอยู่ภายใต้นามของ **Team Lead**
+- **วันส่งงาน:** วันที่ 8 มี.ค. 2569 เวลา 23.59
+- **ส่งงานผ่านฟอร์ม:** [https://forms.gle/wu8ApezHfSzBzvAr8](https://forms.gle/wu8ApezHfSzBzvAr8)
+- **วัน Presentation:** วันที่ 9 มี.ค. 2569 ตามคาบเรียน
 
 ---
 
@@ -31,10 +40,10 @@
 ```
 
 * ค่า `id` คือหมายเลข Model Set ที่ได้รับ (0-9) **เป็น string**
-* ค่า `name` คือชื่อ Model Set ตามที่ระบุใน [`docs/models.md`](models.md)
+* ค่า `name` คือชื่อ Model Set ตามที่ระบุใน [`subjects/models.md`](subjects/models.md)
 * ค่า `sumStudentId` คือผลรวมของ Student ID ทั้งหมดในกลุ่ม
 
-**รายละเอียด Model Sets:** → [`docs/models.md`](models.md)
+**รายละเอียด Model Sets:** → [`subjects/models.md`](subjects/models.md)
 
 ---
 
