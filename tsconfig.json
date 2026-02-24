@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "types": ["node"],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -8,6 +10,7 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
+    "rootDir": "./src",
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,

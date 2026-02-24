@@ -15,9 +15,10 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { join } from 'path';
+import { join } from 'node:path';
 import { JsonFileRepository } from '../common/repositories/json-file.repository';
 import { Product } from './entities/product.entity';
+import process from 'node:process';
 
 @Injectable()
 export class ProductsRepository extends JsonFileRepository<Product> {
