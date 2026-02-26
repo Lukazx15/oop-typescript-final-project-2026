@@ -180,7 +180,37 @@ export class ProductsService {
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
   async update(id: string, dto: UpdateProductDto): Promise<Product> {
-    throw new Error('TODO [Lukazx15-04]: ยังไม่ได้ implement update()');
+    const existing = await this.findOne(id);
+
+    if (dto.sku !== existing.sku) {
+      const all = await this.findAll();
+      const duplicate = all.some(p => p.sku === dto.sku);
+      if (duplicate) {
+      throw new BadRequestException('SKU already exists');
+    }
+  }
+
+  const updated: Product = {
+    ...existing,
+    name: dto.name,
+    description: dto.description,
+    price: dto.price,
+    stockQuantity: dto.stockQuantity,
+    sku: dto.sku,
+    category: dto.category,
+    brand: dto.brand,
+    images: dto.images,
+    weight: dto.weight ?? null,
+    status: dto.status,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const result = await this.productsRepository.update(id, updated);
+  if (!result) {
+    throw new NotFoundException(`Product with id '${id}' not found`);
+  }
+
+  return result;
   }
 
   // ─────────────────────────────────────────────────────────────────
