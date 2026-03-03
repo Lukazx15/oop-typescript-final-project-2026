@@ -30,6 +30,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  uuidv4,
 } from '@nestjs/common';
 
 import { OrdersRepository } from './orders.repository';
@@ -391,4 +392,6 @@ export class OrdersService {
   for (const item of order.items) {
     await this.productsService.restoreStock(item.productId, item.quantity);
   }
+}
+
 }
