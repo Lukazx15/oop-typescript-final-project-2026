@@ -30,19 +30,17 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  uuidv4,
+  v4 as uuidv4,
 } from '@nestjs/common';
 
 import { OrdersRepository } from './orders.repository';
 import { ProductsService } from '../products/products.service';
 import { Order } from './entities/order.entity';
+import { OrderItem } from './interfaces/order-item.interface';
+import { OrderStatus, VALID_ORDER_TRANSITIONS } from './enums/order-status.enum';
+import { ProductStatus } from '../products/enums/product-status.enum';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PatchOrderDto } from './dto/patch-order.dto';
-import { OrderStatus } from './enums/order-status.enum'; 
-import { ProductStatus } from '../products/enums/product-status.enum';
-import { VALID_ORDER_TRANSITIONS } from './enums/order-status.enum';
-import { OrderItem } from './interfaces/order-item.interface';
-
 @Injectable()
 export class OrdersService {
   /**
@@ -350,16 +348,16 @@ export class OrdersService {
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
   async remove(id: string): Promise<Order> {
-  // 1. หาออเดอร์
+  // หาออเดอร์
   const order = await this.findOne(id);
 
-  // 2. คืนสต็อก (เฉพาะกรณียังไม่ได้ cancel)
+  // คืนสต็อก (เฉพาะกรณียังไม่ได้ cancel)
   //    → ถ้า cancel ไปแล้ว สต็อกถูกคืนตอน cancel แล้ว ไม่ต้องคืนซ้ำ!
   if (order.status !== OrderStatus.CANCELLED) {
     await this.restoreOrderStock(order);
   }
 
-  // 3. ลบจาก repository
+  // ลบออกจาก repository
   const deleted = await this.ordersRepository.delete(id);
   if (!deleted) {
     throw new NotFoundException(`Order with id '${id}' not found`);
