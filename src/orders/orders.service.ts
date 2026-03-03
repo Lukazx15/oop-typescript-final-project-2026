@@ -23,19 +23,29 @@
  * → OrdersService ต้องใช้ ProductsService เพื่อตรวจสอบและแก้ไขสต็อก
  * → NestJS inject ProductsService เข้ามาผ่าน Constructor
  *
- * 👤 Assigned to: pockypycok (ณัชชา)
  * ═══════════════════════════════════════════════════════════════════════
  */
 
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
+
 import { OrdersRepository } from './orders.repository';
 import { ProductsService } from '../products/products.service';
 import { Order } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PatchOrderDto } from './dto/patch-order.dto';
+import { OrderStatus } from './enums/order-status.enum'; 
+import { ProductStatus } from '../products/enums/product-status.enum';
+import { VALID_ORDER_TRANSITIONS } from './enums/order-status.enum';
+import { OrderItem } from './entities/order-item.entity';
+
+
+
+
+
 
 @Injectable()
 export class OrdersService {
@@ -148,10 +158,78 @@ export class OrdersService {
   //   return this.ordersRepository.create(order);
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
-  async create(_dto: CreateOrderDto): Promise<Order> {
-    throw new Error('TODO [pockypycok-03]: ยังไม่ได้ implement create()');
+  async create(dto: CreateOrderDto): Promise<Order> {
+  // ═══════════════════════════════════════════════════════
+  // ขั้นที่ 1: ตรวจสอบสินค้า + สร้างรายการ (OrderItem[])
+  // ═══════════════════════════════════════════════════════
+  const orderItems: OrderItem[] = [];
+  let totalAmount = 0;
+
+  for (const item of dto.items) {
+    // 1a. หาสินค้า (ต้อง try-catch เพราะ findOne throw 404 แต่เราต้องการ 400)
+    let product;
+    try {
+      product = await this.productsService.findOne(item.productId);
+    } catch {
+      throw new BadRequestException(`Product '${item.productId}' not found`);
+    }
+    // 1b. ตรวจสอบว่าสินค้าพร้อมขาย (ACTIVE)
+    if (product.status !== ProductStatus.ACTIVE) {
+      throw new BadRequestException(
+        `Product '${product.name}' is not available (${product.status})`,
+      );
+    }
+
+    // 1c. ตรวจสอบสต็อกเพียงพอ
+    if (product.stockQuantity < item.quantity) {
+      throw new BadRequestException(
+        `Insufficient stock for '${product.name}'`,
+      );
+    }
+
+    // 1d. สร้าง OrderItem (เก็บ "Price Snapshot" ณ เวลาที่สั่ง)
+    const subtotal = product.price * item.quantity;
+    orderItems.push({
+      productId: product.id,
+      productName: product.name,
+      priceAtPurchase: product.price,   // ← ราคา ณ ตอนสั่ง (ไม่เปลี่ยนแม้ราคาสินค้าจะเปลี่ยนทีหลัง)
+      quantity: item.quantity,
+      subtotal: subtotal,
+    });
+    totalAmount += subtotal;
   }
 
+  // ═══════════════════════════════════════════════════════
+  // ขั้นที่ 2: ตัดสต็อกสินค้า (เรียก ProductsService)
+  // ═══════════════════════════════════════════════════════
+  for (const item of dto.items) {
+    await this.productsService.deductStock(item.productId, item.quantity);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ขั้นที่ 3: สร้าง Order Object
+  // ═══════════════════════════════════════════════════════
+  const now = new Date().toISOString();
+  const order: Order = {
+    id: uuidv4(),
+    customerId: dto.customerId,
+    items: orderItems,
+    totalAmount: totalAmount,
+    status: OrderStatus.PENDING,         // ← ออเดอร์ใหม่เริ่มต้นที่ PENDING เสมอ
+    paymentMethod: dto.paymentMethod,
+    shippingAddress: dto.shippingAddress,
+    trackingNumber: null,                // ← ยังไม่มีเลขพัสดุ
+    note: dto.note ?? null,
+    placedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // ขั้นที่ 4: บันทึกและ return
+  // ═══════════════════════════════════════════════════════
+  return this.ordersRepository.create(order);
+}
   // ═══════════════════════════════════════════════════════════════════
   // 📕 PATCH ORDER — อัปเดตออเดอร์ (เปลี่ยนสถานะ / แก้ข้อมูล)
   // ═══════════════════════════════════════════════════════════════════
@@ -204,9 +282,50 @@ export class OrdersService {
   //   return result;
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
-  async patch(_id: string, _dto: PatchOrderDto): Promise<Order> {
-    throw new Error('TODO [pockypycok-04]: ยังไม่ได้ implement patch()');
+  async patch(id: string, dto: PatchOrderDto): Promise<Order> {
+  // ── ขั้นที่ 1: หาออเดอร์เดิม ──
+  const existing = await this.findOne(id);
+
+  // ── ขั้นที่ 2: ตรวจสอบ Terminal State ──
+  // ⚠️ ถ้าออเดอร์เป็น COMPLETED หรือ CANCELLED → ห้ามแก้ไขอะไรทั้งนั้น!
+  if (
+    existing.status === OrderStatus.COMPLETED ||
+    existing.status === OrderStatus.CANCELLED
+  ) {
+    throw new BadRequestException(
+      `Cannot update a ${existing.status} order`,
+    );
   }
+
+  // ── ขั้นที่ 3: ตรวจสอบ State Transition (ถ้ามีการเปลี่ยนสถานะ) ──
+  if (dto.status) {
+    const allowedNextStates = VALID_ORDER_TRANSITIONS[existing.status];
+    if (!allowedNextStates.includes(dto.status)) {
+      throw new BadRequestException(
+        `Cannot transition from ${existing.status} to ${dto.status}`,
+      );
+    }
+
+    // ── ขั้นที่ 3b: คืนสต็อกถ้ายกเลิก ──
+    if (dto.status === OrderStatus.CANCELLED) {
+      await this.restoreOrderStock(existing);
+    }
+  }
+
+  // ── ขั้นที่ 4: อัปเดตข้อมูล (Spread Merge) ──
+  const updated: Order = {
+    ...existing,
+    ...dto,
+    updatedAt: new Date().toISOString(),
+  };
+
+  // ── ขั้นที่ 5: บันทึก ──
+  const result = await this.ordersRepository.update(id, updated);
+  if (!result) {
+    throw new NotFoundException(`Order with id '${id}' not found`);
+  }
+  return result;
+}
 
   // ═══════════════════════════════════════════════════════════════════
   // 📕 DELETE ORDER — ลบออเดอร์ + คืนสต็อก
@@ -234,9 +353,24 @@ export class OrdersService {
   //   4. return deleted;
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
-  async remove(_id: string): Promise<Order> {
-    throw new Error('TODO [pockypycok-05]: ยังไม่ได้ implement remove()');
+  async remove(id: string): Promise<Order> {
+  // 1. หาออเดอร์
+  const order = await this.findOne(id);
+
+  // 2. คืนสต็อก (เฉพาะกรณียังไม่ได้ cancel)
+  //    → ถ้า cancel ไปแล้ว สต็อกถูกคืนตอน cancel แล้ว ไม่ต้องคืนซ้ำ!
+  if (order.status !== OrderStatus.CANCELLED) {
+    await this.restoreOrderStock(order);
   }
+
+  // 3. ลบจาก repository
+  const deleted = await this.ordersRepository.delete(id);
+  if (!deleted) {
+    throw new NotFoundException(`Order with id '${id}' not found`);
+  }
+
+  return deleted;
+}
 
   // ═══════════════════════════════════════════════════════════════════
   // 🔧 PRIVATE HELPERS — เมธอดช่วยภายใน
@@ -257,9 +391,9 @@ export class OrdersService {
   //   }
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
-  private async restoreOrderStock(_order: Order): Promise<void> {
-    throw new Error(
-      'TODO [pockypycok-06]: ยังไม่ได้ implement restoreOrderStock()',
-    );
+  private async restoreOrderStock(order: Order): Promise<void> {
+  // วนลูปผ่านทุกสินค้าในออเดอร์ แล้วคืนสต็อก
+  for (const item of order.items) {
+    await this.productsService.restoreStock(item.productId, item.quantity);
   }
 }
