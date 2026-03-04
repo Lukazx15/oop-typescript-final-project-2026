@@ -19,11 +19,11 @@
  *   - Encapsulation: ซ่อนรายละเอียดการอ่าน/เขียนไฟล์ไว้ภายใน
  *     ภายนอกเรียกแค่ findAll(), create() ไม่ต้องรู้ว่าข้างในอ่านไฟล์ยังไง
  *
- * 👤 Assigned to: bouquetofroses (นภัทร์)
+
  * ═══════════════════════════════════════════════════════════════════════
  */
 
-import { readFile } from 'fs/promises';
+import { readFile, writeFile, rename } from 'fs/promises';
 import { BaseEntity } from '../entities/base.entity';
 
 /**
@@ -105,9 +105,17 @@ export class JsonFileRepository<T extends BaseEntity> {
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง แทนที่ throw ⬇️
   private async saveToFile(): Promise<void> {
-    throw new Error(
-      'TODO [bouquetofroses-03]: ยังไม่ได้ implement saveToFile()',
-    );
+    // สร้างชื่อไฟล์ชั่วคราว เช่น "data/products.json.tmp"
+    const tmpPath = this.filePath + '.tmp';
+
+    // แปลง array ใน memory → JSON string (pretty-print 2 spaces)
+    const jsonString = JSON.stringify(this.data, null, 2);
+
+    // เขียนลงไฟล์ชั่วคราวก่อน
+    await writeFile(tmpPath, jsonString, 'utf-8');
+
+    // rename เป็น atomic operation → ถ้าเครื่องดับกลางทาง ไฟล์จริงไม่เสียหาย
+    await rename(tmpPath, this.filePath);
   }
 
   /**
@@ -158,10 +166,13 @@ export class JsonFileRepository<T extends BaseEntity> {
   //   return result;
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
-  async findById(_id: string): Promise<T | null> {
-    throw new Error(
-      'TODO [bouquetofroses-04]: ยังไม่ได้ implement findById()',
-    );
+  async findById(id: string): Promise<T | null> {
+    // โหลดข้อมูลจากไฟล์เข้า memory (ถ้ายังไม่เคยโหลด)
+    await this.ensureLoaded();
+
+    // find() คืน element แรกที่ id ตรง หรือ undefined ถ้าไม่เจอ
+    // ?? null แปลง undefined → null เพื่อให้ type ตรง
+    return this.data.find((item) => item.id === id) ?? null;
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -176,10 +187,18 @@ export class JsonFileRepository<T extends BaseEntity> {
   //   4. คืนค่า entity ที่เพิ่มไป
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
-  async create(_entity: T): Promise<T> {
-    throw new Error(
-      'TODO [bouquetofroses-05]: ยังไม่ได้ implement create()',
-    );
+  async create(entity: T): Promise<T> {
+    // โหลดข้อมูลจากไฟล์เข้า memory ก่อน
+    await this.ensureLoaded();
+
+    // เพิ่ม entity ใหม่เข้า array ใน memory
+    this.data.push(entity);
+
+    // บันทึก array ที่อัปเดตแล้วลงไฟล์ JSON
+    await this.saveToFile();
+
+    // คืนค่า entity ที่เพิ่งสร้าง
+    return entity;
   }
 
   /**
@@ -230,9 +249,28 @@ export class JsonFileRepository<T extends BaseEntity> {
   //   arr.splice(1, 1);  // ลบ 'b' → arr = ['a', 'c']
   //
   // ⬇️ เขียนโค้ดของคุณด้านล่าง ⬇️
-  async delete(_id: string): Promise<T | null> {
-    throw new Error(
-      'TODO [bouquetofroses-06]: ยังไม่ได้ implement delete()',
-    );
+  async delete(id: string): Promise<T | null> {
+    // โหลดข้อมูลจากไฟล์เข้า memory ก่อน
+    await this.ensureLoaded();
+
+    // หาตำแหน่ง (index) ของข้อมูลที่มี id ตรงกัน
+    const index = this.data.findIndex((item) => item.id === id);
+
+    // ถ้าไม่เจอ (index === -1) → คืน null
+    if (index === -1) {
+      return null;
+    }
+
+    // เก็บข้อมูลที่จะลบไว้ก่อน เพื่อ return กลับไปให้ caller
+    const deleted = this.data[index];
+
+    // ลบออกจาก array: splice(ตำแหน่ง, จำนวน) → ลบ 1 ตัวที่ index
+    this.data.splice(index, 1);
+
+    // บันทึก array ที่อัปเดตแล้วลงไฟล์
+    await this.saveToFile();
+
+    // คืนค่าข้อมูลที่ถูกลบ
+    return deleted;
   }
 }
