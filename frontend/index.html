@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commerce Pulse Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+  <header class="shell hero">
+    <div>
+      <p class="kicker">E-commerce Control Center</p>
+      <h1>Commerce Pulse Dashboard</h1>
+      <p class="lead">จัดการลูกค้า สินค้า คำสั่งซื้อ และดูพฤติกรรมการซื้อได้ในหน้าจอเดียว</p>
+    </div>
+    <div class="hero-actions">
+      <button id="refreshAllBtn" class="btn primary">Refresh Data</button>
+      <span id="apiStatus" class="api-status">API: checking...</span>
+    </div>
+  </header>
+
+  <main class="shell grid-root">
+    <section class="card stats" id="statsCards"></section>
+
+    <section class="card split">
+      <div>
+        <h2>ซื้อสินค้า</h2>
+        <form id="createOrderForm" class="stack">
+          <label>ลูกค้า
+            <select id="orderCustomerId" required></select>
+          </label>
+          <label>สินค้า
+            <select id="orderProductId" required></select>
+          </label>
+          <label>จำนวน
+            <input id="orderQuantity" type="number" min="1" value="1" required />
+          </label>
+          <label>ชำระเงิน
+            <select id="orderPaymentMethod" required>
+              <option value="CREDIT_CARD">CREDIT_CARD</option>
+              <option value="BANK_TRANSFER">BANK_TRANSFER</option>
+              <option value="COD">COD</option>
+            </select>
+          </label>
+          <label>ที่อยู่จัดส่ง
+            <textarea id="orderAddress" rows="2" required>123 Test Street, Test City 10000</textarea>
+          </label>
+          <label>หมายเหตุ
+            <input id="orderNote" type="text" placeholder="optional" />
+          </label>
+          <button class="btn primary" type="submit">สร้างคำสั่งซื้อ</button>
+        </form>
+      </div>
+      <div>
+        <h2>สถานะคำสั่งซื้อ</h2>
+        <div id="ordersList" class="list"></div>
+      </div>
+    </section>
+
+    <section class="card split">
+      <div>
+        <h2>Customer History</h2>
+        <label>เลือกลูกค้า
+          <select id="historyCustomerSelect"></select>
+        </label>
+        <button id="loadHistoryBtn" class="btn ghost">โหลดประวัติการซื้อ</button>
+        <div id="customerHistory" class="history-box"></div>
+      </div>
+      <div>
+        <h2>Product Manager</h2>
+        <form id="productForm" class="stack compact">
+          <input id="productId" type="hidden" />
+          <label>ชื่อสินค้า<input id="productName" required /></label>
+          <label>รายละเอียด<input id="productDescription" required /></label>
+          <label>ราคา<input id="productPrice" type="number" min="1" step="0.01" required /></label>
+          <label>สต็อก<input id="productStock" type="number" min="0" required /></label>
+          <label>SKU<input id="productSku" required /></label>
+          <label>หมวดหมู่
+            <select id="productCategory" required>
+              <option>ELECTRONICS</option>
+              <option>CLOTHING</option>
+              <option>HOME_APPLIANCES</option>
+              <option>BOOKS</option>
+              <option>FOOD_BEVERAGES</option>
+            </select>
+          </label>
+          <label>แบรนด์<input id="productBrand" required /></label>
+          <label>รูปสินค้า URL<input id="productImage" required /></label>
+          <label>สถานะ
+            <select id="productStatus" required>
+              <option>ACTIVE</option>
+              <option>OUT_OF_STOCK</option>
+              <option>DISCONTINUED</option>
+            </select>
+          </label>
+          <div class="button-row">
+            <button class="btn primary" type="submit">บันทึกสินค้า</button>
+            <button id="resetProductFormBtn" class="btn ghost" type="button">ล้างฟอร์ม</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card split">
+      <div>
+        <h2>Customers</h2>
+        <form id="customerForm" class="stack compact">
+          <input id="customerId" type="hidden" />
+          <label>ชื่อ<input id="customerName" required /></label>
+          <label>Email<input id="customerEmail" type="email" required /></label>
+          <label>Phone<input id="customerPhone" required /></label>
+          <label>Address<input id="customerAddress" required /></label>
+          <label>Status
+            <select id="customerStatus">
+              <option>ACTIVE</option>
+              <option>INACTIVE</option>
+            </select>
+          </label>
+          <div class="button-row">
+            <button class="btn primary" type="submit">บันทึกลูกค้า</button>
+            <button id="resetCustomerFormBtn" class="btn ghost" type="button">ล้างฟอร์ม</button>
+          </div>
+        </form>
+      </div>
+      <div>
+        <h2>Insights</h2>
+        <div id="insightsTopBuyers" class="history-box"></div>
+        <div id="insightsTopProducts" class="history-box"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Products Table</h2>
+      <div id="productsTable" class="table-wrap"></div>
+    </section>
+
+    <section class="card">
+      <h2>Customers Table</h2>
+      <div id="customersTable" class="table-wrap"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
